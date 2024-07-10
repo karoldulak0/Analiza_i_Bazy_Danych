@@ -1,0 +1,114 @@
+---
+title: "lab5"
+format: html
+editor: visual
+---
+
+## Quarto
+
+1.  Znajdź wszystkie nazwy krajów rozpoczynających się na P.
+
+2.  Znajdź wszystkie nazwy krajów rozpoczynających się P i kończących na s.
+
+3.  Znajdź wszystkie tytuły filmów, w których znajdują się cyfry.
+
+4.  Znajdź wszystkich pracowników z podwójnym imieniem lub nazwiskiem.
+
+5.  Znajdź wszystkie nazwiska aktorów rozpoczynających się od P lub C i mających 5 znaków.
+
+6.  Znajdź wszystkie tytuły filmów, w których występują słowa Trip lub Alone.
+
+7.  Przeanalizuj zapytania:
+
+    -   select first_name from actor where first_name \~ '\^Al\[a:z,1:9\]\*'
+
+    -   select first_name from actor where first_name \~\* '\^al\[a:z,1:9\]\*'
+
+## Baza R
+
+```{r}
+library(DBI) 
+library(RPostgres)  
+dsn_database = "wbauer_adb_2023"    
+dsn_hostname = "pgsql-196447.vipserv.org"   
+dsn_port = "5432"                 
+dsn_uid = "wbauer_adb"         
+dsn_pwd = "adb2020"    
+con <- dbConnect(Postgres(), dbname = dsn_database, host=dsn_hostname, port=dsn_port, user=dsn_uid, password=dsn_pwd) 
+```
+
+```{r}
+df1 <- dbGetQuery(con, "SELECT country.country FROM country WHERE country.country LIKE 'P%'")
+print(df1) 
+
+```
+
+```{r}
+df2 <- dbGetQuery(con, "SELECT country.country FROM country WHERE country.country LIKE 'P%s'")
+print(df2)
+```
+
+```{r}
+df3 <- dbGetQuery(con, "SELECT film.title FROM film WHERE film.title LIKE '%[0-9]%'")
+print(df3) 
+#najwyrazniej nie ma zadnych takich tytułów filmow ktore zawieraja jakas cyfre, bo jak wyswietlilem wszystkie no to nie znalazlem  
+```
+
+```{r}
+df4 <- dbGetQuery(con, "SELECT staff.first_name, staff.last_name FROM staff WHERE (first_name LIKE '%[- ]%[- ]%' OR last_name LIKE '%[- ]%[- ]%')")
+print(df4)
+
+#tu są tylko dwie osoby w staff łącznie i żadna z nich nie ma podwójnego niczego takze no musi wyjść zero
+```
+
+```{r}
+df5 <- dbGetQuery(con, "SELECT actor.last_name FROM actor WHERE actor.last_name SIMILAR TO '(P|C)%' AND LENGTH(last_name) = 5")
+print(df5) 
+```
+
+```{r}
+df6 <- dbGetQuery(con, "SELECT film.title FROM film WHERE film.title SIMILAR TO '(Trip)%' OR film.title SIMILAR TO '%(Trip)' OR film.title SIMILAR TO '%(Alone)' OR film.title SIMILAR TO '(Alone)%' ")
+print(df6)
+
+df7 <- dbGetQuery(con, "SELECT film.title FROM film WHERE film.title SIMILAR TO '(Alone)%' OR film.title SIMILAR TO '%(Alone)'")
+print(df7)
+
+df8 <- dbGetQuery(con, "SELECT film.title FROM film WHERE film.title SIMILAR TO '(Trip)%' OR film.title SIMILAR TO '%(Trip)' OR film.title SIMILAR TO '(Alone)%' OR film.title SIMILAR TO '%(Alone)'")
+print(df8)
+
+
+#czyli samo alone nie ma nic, samo trip jest 3, jeden jest Trip alone czyli pokazuje 4 czyli dobrze
+```
+
+```{r}
+df9 <- dbGetQuery(con,"SELECT actor.first_name FROM actor WHERE first_name ~ '^Al[a:z,1:9]*'")
+print(df9)
+
+df10 <- dbGetQuery(con,"SELECT actor.first_name FROM actor WHERE first_name ~ '^al[a:z,1:9]*'")
+print(df10)
+
+df11 <- dbGetQuery(con,"SELECT actor.first_name FROM actor WHERE first_name ~* '^al[a:z,1:9]*'")
+print(df11)
+```
+
+Używamy operatora \~
+
+Wyrażenie \~ '\^Al\[a:z,1:9\]\*' oznacza:
+
+-   \^ : Rozpocznij dopasowywanie od początku
+
+-   Al : Dopasuj literę "A" i literę "l" dokładnie w tej kolejności.
+
+-   \[a:z,1:9\]\*: Dopasuj reszte znaków, które są literami od "a" do "z" lub cyframi od "1" do "9".
+
+Czyli first_name zaczyna się od "Al", a następnie może zawierać litery od "a" do "z" lub cyfry od "1" do "9".
+
+Uzywamy operatora \~\*
+
+Ogólnie to wszsytko jest takie samo oprócz \~\* czyli nie będzie zwracać uwagi na wielkość liter.
+
+Czyli podsumowująć
+
+\~ będzie czułe na wielkość liter
+
+\~\* nie będzie czułe na wielkość liter
