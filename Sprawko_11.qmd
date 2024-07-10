@@ -1,0 +1,124 @@
+---
+title: "lab10"
+format: html
+editor: visual
+---
+
+## Quarto
+
+```{r}
+library(tidyverse)
+csv_file <- read.csv('beauty.csv')
+glimpse(csv_file)
+
+csv_new <- csv_file |> 
+ rowwise() |>
+ mutate(class0 = if(all(c_across(class1:class30) == 0)) 1 else 0) |> 
+ ungroup() |> 
+ pivot_longer(cols=paste('class', 0:30, sep = ''), names_to='class', names_prefix='class') |> 
+ mutate(class = as.integer(class)) |>
+ filter(value==1) |>
+ select(-value)
+
+glimpse(csv_new)
+
+```
+
+W ramach tego pliku należy opisać każdą ze zmiennych, określając jej zakresy, podstawowe statystyki, wartości odstające, rozkład (histogram lub wykres słupkowy w zależności od charakteru zmiennej).
+
+| zmienna           | typ   | opis                                                                | interpretacja                        |
+|-------------|-------------|-------------------------------|----------------|
+| tenured           | float | czy na stałe zatrudniony                                            | 0 lub 1 w zależności czy zatrudniony |
+| profnumber        | float | numer profesora                                                     | unikalny numer ( rzędami po kolei)   |
+| minority          | float | mniejszość                                                          | 0 lub 1 w zależności czy mniejszość  |
+| age               | float | wiek profesora                                                      |                                      |
+| beauty2upper      | float | ocena wyglądu (ocena od 1 do 10), 2. rok studentka wyższego stopnia | zakres 1-10                          |
+| beautyflowerdiv   | float | ocena wyglądu (ocena od 1 do 10), studentka niższego stopnia        | zakres 1-10                          |
+| beautyfupperdiv   | float | ocena wyglądu (ocena od 1 do 10), studentka wyższego stopnia        | zakres 1-10                          |
+| beautym2upper     | float | ocena wyglądu (ocena od 1 do 10), 2. rok student wyższego stopnia   | zakres 1-10                          |
+| beautymlowerdiv   | float | ocena wyglądu (ocena od 1 do 10), student niższego stopnia          | zakres 1-10                          |
+| beautymupperdiv   | float | ocena wyglądu (ocena od 1 do 10), student wyższego stopnia          | zakres 1-10                          |
+| btystdave         | float | średnia z 6 znormalizowanych ocen piękna                            |                                      |
+| btystdf2u         | float | normalizacja jakaś                                                  |                                      |
+| btystdfl          | float | -\|\|-                                                              |                                      |
+| btystdfu          | float | -\|\|-                                                              |                                      |
+| btystdm2u         | float | -\|\|-                                                              |                                      |
+| btystdml          | float | -\|\|-                                                              |                                      |
+| btystdmu          | float | -\|\|-                                                              |                                      |
+| class             | byte  | kursy                                                               | ilość kursów                         |
+| courseevaluation  | float | średnia ocena kursu                                                 |                                      |
+| didevaluation     | float | liczba osób wypełniających oceny                                    |                                      |
+| female            | float | kobieta = 1                                                         | 0 lub 1 w zależności czy kobieta     |
+| formal            | float | zdjęcie w krawacie lub bluzce                                       | 0 lub 1 w zależności obok            |
+| fulldept          | float | cały wydział miał zdjęcia w Internecie                              | -\|\|-                               |
+| lower             | float | kurs niższego stopnia                                               | -\|\|-                               |
+| multipleclass     | byte  | równa 1, jeśli więcej niż jeden profesor prowadzi sekcje w kursie   | -\|\|-                               |
+| nonenglish        | byte  | nauczyciel mówiący w języku innym niż angielski jako język ojczysty | -\|\|-                               |
+| onecredit         | byte  | równa 1, jeśli kurs jest superszybki                                | -\|\|-                               |
+| percentevaluating | float | procent osób wypełniających ankiety                                 | zakres 1-100                         |
+| profevaluation    | float | średnia ocena profesora                                             | zakres 0-5                           |
+| students          | float | liczba studentów                                                    |                                      |
+| tenuretrack       | float | na ścieżce do uzyskania stałego zatrudnienia                        | 0 lub 1                              |
+| blackndwhite      | byte  | czarny lub biały strój                                              | -\|\|-                               |
+| btystdvariance    | float | wariancja znormalizowanych ocen piękna                              |                                      |
+| btystdavepos      | float | średnia ocena piękna - dodatnia                                     |                                      |
+| btystdaveneg      | float | średnia ocena piękna - ujemna                                       |                                      |
+
+```{r}
+###1. Czy wszystkie dane są poprawne? Czy nie ma jakichś niespójności? Z czego one mogą wynikać jeśli występują?
+
+#Dane wydają się poprawne, tam gdzie mają być wartości 0-1 są wartości 0-1, tam gdzie jest procentowa wartość to jest wartość z zakresu 0-100, jedyne co można zauważyć to, że niektózy profesorowie mają studentów, ale mają 0 w class, czyli jakby nie prowadzili kursów, ale to też jest możliwe. Multipleclass też zgadza się, bo jak class>1 to tu jest też 1. 
+```
+
+```{r}
+##2. Czy ocena nauczyciela i ocena kursu mają ze spobą jakiś związek? Czy charakter tego związku jest taki sam dla nauczycielami będącymi kobietami i mężczyznami? Albo doświadczonych (tenured)? Albo należących do mniejszości?
+
+ggplot(csv_new, aes(x = profevaluation, y = courseevaluation)) +
+  geom_point() +geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(title = "Związek między oceną nauczyciela a oceną kursu",
+       x = "Ocena nauczyciela", y = "Ocena kursu")
+
+#Im wyższa ocena nauczyciela tym wyższa ocena kursu, jest zależność liniowa między nimi
+```
+
+```{r}
+##3. Czy płeć oceniających urodę nauczyciela wpływa na ocenę? Czy to ma jakiś związek z jego płcią, doświadczeniem, czy przynależnością do mniejszości?
+
+
+#oceny przez kobiety 
+suma_ocen_1 <- sum(csv_new$beautyf2upper, na.rm = TRUE)
+
+srednia_ocena_1 <- suma_ocen_1 / length(csv_new$beautyf2upper)
+
+suma_ocen_2 <- sum(csv_new$beautyflowerdiv, na.rm = TRUE)
+
+srednia_ocena_2 <- suma_ocen_2 / length(csv_new$beautyflowerdiv)
+
+suma_ocen_3 <- sum(csv_new$beautyfupperdiv, na.rm = TRUE)
+
+srednia_ocena_3 <- suma_ocen_3 / length(csv_new$beautyfupperdiv)
+
+srednia_przez_kobiety = sum(srednia_ocena_1,srednia_ocena_2,srednia_ocena_3)/3
+print(srednia_przez_kobiety)
+
+
+#oceny przez mezczyzn 
+suma_ocen_4 <- sum(csv_new$beautym2upper, na.rm = TRUE)
+
+srednia_ocena_4 <- suma_ocen_4 / length(csv_new$beautym2upper)
+
+suma_ocen_5 <- sum(csv_new$beautymlowerdiv, na.rm = TRUE)
+
+srednia_ocena_5 <- suma_ocen_5 / length(csv_new$beautymlowerdiv)
+
+suma_ocen_6 <- sum(csv_new$beautymupperdiv, na.rm = TRUE)
+
+srednia_ocena_6 <- suma_ocen_6 / length(csv_new$beautymupperdiv)
+
+srednia_facet = sum(srednia_ocena_4,srednia_ocena_5,srednia_ocena_6)/3
+print(srednia_facet)
+
+
+##Widac ze studentki srednio lepiej oceniaja swoich profesorow niz mezczyzni 
+
+```

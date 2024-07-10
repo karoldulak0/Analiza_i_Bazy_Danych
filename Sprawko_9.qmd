@@ -1,0 +1,109 @@
+---
+title: "lab9"
+format: html
+editor: visual
+---
+
+## Quarto
+
+```{r}
+library(RMariaDB)
+
+dsn_database = "karoldul"    
+dsn_hostname = "mysql.agh.edu.pl"   
+dsn_port = "3306"                 
+dsn_uid = "karoldul"         
+dsn_pwd = "miNuoFNgWhEo2tBb"    
+con <- dbConnect(MariaDB(), dbname = dsn_database, host=dsn_hostname, port=dsn_port, user=dsn_uid, password=dsn_pwd)
+```
+
+```{r}
+query <- "CREATE TABLE IF NOT EXISTS users (
+             id INT AUTO_INCREMENT PRIMARY KEY,
+             email VARCHAR(255) NOT NULL
+          )";
+
+dbGetQuery(con, query)
+
+
+query2 <- "CREATE TABLE IF NOT EXISTS hosts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+)";
+
+
+dbGetQuery(con, query2)
+
+query3 <- " CREATE TABLE IF NOT EXISTS countries (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    country_code VARCHAR(2),
+    name VARCHAR(255)
+)";
+
+
+dbGetQuery(con, query3)
+
+query4 <- " CREATE TABLE IF NOT EXISTS cities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    country_id INT,
+    FOREIGN KEY (country_id) REFERENCES countries(id)
+)";
+
+
+dbGetQuery(con, query4)
+
+query5 <- " CREATE TABLE IF NOT EXISTS places (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    host_id INT,
+    address varchar(255),
+    city_id INT,
+    FOREIGN KEY (city_id) REFERENCES cities(id),
+    FOREIGN KEY (host_id) REFERENCES hosts(id)
+)";
+
+
+dbGetQuery(con, query5)
+
+query6 <- " CREATE TABLE IF NOT EXISTS bookings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    place_id INT,
+    start_date DATE,
+    end_date DATE,
+    price_per_night FLOAT ,
+    num_nights INT,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (place_id) REFERENCES places(id)
+)";
+
+
+dbGetQuery(con, query6)
+
+query7 <- " CREATE TABLE IF NOT EXISTS reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    booking_id INT,
+    rating TINYINT,
+    review_body TEXT, 
+    FOREIGN KEY (booking_id) REFERENCES bookings(id)
+)";
+
+
+dbGetQuery(con, query7)
+
+query_alter_users <- "ALTER TABLE users MODIFY COLUMN email VARCHAR(150);"
+dbGetQuery(con, query_alter_users)
+
+query_alter_countries <- "ALTER TABLE countries MODIFY COLUMN name VARCHAR(150);"
+dbGetQuery(con, query_alter_countries)
+
+query_alter_cities <- "ALTER TABLE cities MODIFY COLUMN name VARCHAR(150);"
+dbGetQuery(con, query_alter_cities)
+
+query_alter_places <- "ALTER TABLE places MODIFY COLUMN address VARCHAR(150);"
+dbGetQuery(con, query_alter_places)
+
+query_alter_reviews <- "ALTER TABLE reviews MODIFY COLUMN review_body VARCHAR(150);"
+dbGetQuery(con, query_alter_reviews)
+```

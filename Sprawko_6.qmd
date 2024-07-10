@@ -1,0 +1,167 @@
+---
+title: "lab6"
+format: html
+editor: visual
+---
+
+## Quarto
+
+1.  Korzystając z dokumentacji pakietu i podglądając zawartość tabeli opisać co znaczą wszystkie zmienne oraz jakich są typów. Wyjaśnić też co oznaczają poszczególne kody.
+2.  Za pomocą pojedynczego pipelina na każdy warunek, znajdź wszystkie loty, które:
+    -   Miały opóźnienie o co najmniej 2 godziny.
+    -   Leciały do Huston (IAH lub HOU)
+    -   Były z lini lotniczych United, American, lub Delta
+    -   Wylatywały w lecie (Lipiec, Sierpień, Wrzesień)
+    -   Miały opóźnienie o co najmniej dwie godziny ale nie miały opóźnienia odlotu.
+    -   Miały co najmniej godzinę opóźnienia ale odrobiły ponad 30 minut w trakcie lotu.
+    -   Posortuj loty by znaleźć loty z najdłuższym opóźnieniem odlotu. Znajdź loty, który odlatywały najwcześniej rano.
+3.  Posortuj loty by znaleźć najszybsze połączenia. Wskazówka: Wykorzystać obliczenia matematyczne wewnątrz funkcji.
+4.  Czy każdego dnia 2013 odbył się co najmniej jeden lot?
+5.  Które loty pokonały największy dystans a które najkrótszy (top i bottom 10)
+6.  Czy kolejność używania `filter()` i `arrange()` ma znaczenie jeśli używasz obydwu? Dlaczego tak/nie? Weź pod uwagę zarówno rezultaty jak też i zużycie zasobów.
+
+```{r}
+#install.packages('tidyverse')
+#install.packages('nycflights13')
+
+```
+
+You can add options to executable code like this
+
+```{r}
+library(nycflights13)
+library(tidyverse)
+```
+
+```{r}
+?flights
+as_tibble (flights)
+```
+
+year, month, day - data planowanego wylotu ( int )
+
+dep_time, arr_time (HHMM/ HMM) - aktualny czas wylotu i przylotu ( int )
+
+sched_dep_time, sched_arr_time - planowany czas wylotu i przylotu (int)
+
+dep_delay, arr_daley - o ile się spóźnił wylot/przylot samolotu ( ujemne wartości oznaczają, że jest przed czasem) (dbl)
+
+carrier - są to skroty od nazw linii lotniczych (chr)
+
+flight - numer lotu ( mogą być te same dla różncyh linii lotniczych bo są loty AA1 i UA1) ( int)
+
+tailnumber - unikalny numer na ogonie każdego samolotu (chr)
+
+origin, dest - skróty lotnisk wylotu i przylotu (chr)
+
+air_time - czas spędzony w powietrzu (dbl)
+
+distance - dystans pomiędzy lotniskami w milach (dbl)
+
+hour, minute - scheduled departure ale rozłożone na dwie zmienne (dbl , dbl )
+
+time_hour - scheduled data ale w innym formacie ( POSIXct)
+
+```{r}
+df1 <- flights |> filter(dep_delay >= 120) |> select(dep_delay, carrier, flight) |> arrange(dep_delay) 
+df1 
+```
+
+```{r}
+df2 <- flights |> filter(dest == 'IAH' | dest == 'HOU' ) |> select(dest, carrier, flight) 
+df2 
+```
+
+```{r}
+df3 <- flights |> filter(carrier == 'AA' | carrier == 'UA' | carrier == 'DL') |> select(dest, carrier, flight) 
+df3 
+```
+
+```{r}
+df4 <- flights |> filter(month == 7 | month == 8 | month == 9 ) |> select(month, carrier, flight) 
+df4
+
+df5 <- flights |> filter( month == 8 | month == 9 ) |> select(month, carrier, flight) 
+df5
+
+#pokazuje tylko ta najmniejsza ale tych kolumn jest tyle ze to musi dzialac 
+```
+
+```{r}
+df6 <- flights |> filter( arr_delay >= 120 & dep_delay <= 0 ) |> select(dep_delay,arr_delay, carrier, flight) 
+df6
+```
+
+```{r}
+df7 <- flights |> filter( arr_delay <= 30 & dep_delay >= 60 ) |> select(dep_delay,arr_delay, carrier, flight) 
+df7
+
+#departure time ponad 60 minut a czas przylotu ponizej 30 minut czyli nadrobil 30 minut w trakcie lotu 
+```
+
+```{r}
+df8 <- flights |> select(arr_delay, carrier, flight) |> arrange(desc(arr_delay))
+df8
+
+
+```
+
+```{r}
+
+#rano czyli miedzy 4 a 6 rano 
+
+df10 <- flights |> filter( dep_time <= 600 & dep_time > 400) |> select(dep_time, carrier, flight) |> arrange(dep_time)
+df10
+
+
+```
+
+```{r}
+#possortowane wzgledem air_time, czyli najkrotszy czas lotu  
+df11 <- flights |> select(air_time, carrier, flight) |> arrange(air_time)
+df11
+
+#w polecieniu jest zeby uzyc funckji to na wypadek gdyby o to chodzilo 
+#tu jest cos zle trzeba dopytac 
+library(dplyr)
+
+flights <- flights|> mutate(duration = arr_time - dep_time)
+df12 <- flights |> filter(air_time > 400) |> select(dep_time, arr_time, duration, carrier, flight) |> arrange(duration)
+df12
+```
+
+```{r}
+library(dplyr)
+
+
+flights_per_day <- flights |> group_by(time_hour) |> summarise(num_flights = n())
+#czy dla każdego dnia liczba lotów jest większa niż zero
+every_day_has_flight <- all(flights_per_day$num_flights > 0)
+every_day_has_flight
+```
+
+```{r}
+df13 <- flights |> select(distance, carrier, flight) |> arrange(distance) |> distinct(flight, .keep_all = TRUE) |> slice_head(n = 10)
+df13
+
+df14 <- flights |> select(distance, carrier, flight) |> arrange(desc(distance)) |> distinct(flight, .keep_all = TRUE) |> slice_head(n = 10)
+df14
+```
+
+```{r}
+df_check1 <- flights |> filter(dep_delay >= 120) |> select(dep_delay, carrier, flight) |> arrange(dep_delay) 
+df_check1 
+
+df_check2 <- flights |> arrange(dep_delay) |> filter(dep_delay >= 120) |> select(dep_delay, carrier, flight) 
+df_check2 
+
+df_check3 <- flights |> filter(carrier == 'AA' | carrier == 'UA' | carrier == 'DL') |> select(dest, carrier, flight) |> arrange(dest) 
+df_check3
+
+df_check4 <- flights |> arrange(dest) |> filter(carrier == 'AA' | carrier == 'UA' | carrier == 'DL') |> select(dest, carrier, flight) 
+df_check4
+
+
+```
+
+W przypadku użycia ich obu to rezultaty wyjdą takie same no bo chcemy uzyskać jakieś filtrowane dane w jakiejs kolejnosci to to czy najpierw posortujemy i filtrujemy czy odwrotnie nie bedzie miec znaczenia, natomiast w przypadku zasobów to może mieć znaczenie \# Z jednej strony jezeli najpierw zrobimy filtracje to przefiltruje nam po calych danych ale potem juz sortowanie bedzie tylko po danych po filtracji \# Z drugiej strony jezeli najpierw damy sortowanie to posortuje nam z calosci po jakies danej, raczej po tej po ktorej potem bedziemy cos filtrowac i bedzie po kolei do filtrowania wiec moze wezmie tylko np pierwsze 300 ( bo juz sa posortowane), ale nie jestem pewny czy program ogarnie ze nie musi juz filtrowac dalej ( bo są np posortowane malejaco a my mielismy warunek \>300), wiec i tak filtracja bedzie po wszystkich. \# Na moje oko to lepiej dla oszczednosci uzywac najpierw filter a potem arrange

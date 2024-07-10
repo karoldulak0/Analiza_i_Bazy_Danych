@@ -1,0 +1,65 @@
+---
+title: "lab10"
+format: html
+editor: visual
+---
+
+## Quarto
+
+```{r}
+library(tidyverse)
+csv_file <- read.csv('beauty.csv')
+glimpse(csv_file)
+
+csv_new <- csv_file |> 
+ rowwise() |>
+ mutate(class0 = if(all(c_across(class1:class30) == 0)) 1 else 0) |> 
+ ungroup() |> 
+ pivot_longer(cols=paste('class', 0:30, sep = ''), names_to='class', names_prefix='class') |> 
+ mutate(class = as.integer(class)) |>
+ filter(value==1) |>
+ select(-value)
+
+glimpse(csv_new)
+
+```
+
+W ramach tego pliku należy opisać każdą ze zmiennych, określając jej zakresy, podstawowe statystyki, wartości odstające, rozkład (histogram lub wykres słupkowy w zależności od charakteru zmiennej).
+
+| zmienna           | typ   | opis |
+|-------------------|-------|------|
+| tenured           | float |      |
+| profnumber        | float |      |
+| minority          | float |      |
+| age               | float |      |
+| beauty2upper      | float |      |
+| beautyflowerdiv   | float |      |
+| beautyfupperdiv   | float |      |
+| beautym2upper     | float |      |
+| beautymlowerdiv   | float |      |
+| beautymupperdiv   | float |      |
+| btystdave         | float |      |
+| btystdf2u         | float |      |
+| btystdfl          | float |      |
+| btystdfu          | float |      |
+| btystdm2u         | float |      |
+| btystdml          | float |      |
+| btystdmu          | float |      |
+| class             | byte  |      |
+| courseevaluation  | float |      |
+| didevaluation     | float |      |
+| female            | float |      |
+| formal            | float |      |
+| fulldept          | float |      |
+| lower             | float |      |
+| multipleclass     | byte  |      |
+| nonenglish        | byte  |      |
+| onecredit         | byte  |      |
+| percentevaluating | float |      |
+| profevaluation    | float |      |
+| students          | float |      |
+| tenuretrack       | float |      |
+| blackndwhite      | byte  |      |
+| btystdvariance    | float |      |
+| btystdavepos      | float |      |
+| btystdaveneg      | float |      |

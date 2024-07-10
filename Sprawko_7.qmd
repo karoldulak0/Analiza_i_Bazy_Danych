@@ -1,0 +1,211 @@
+---
+title: "lab6"
+format: html
+editor: visual
+---
+
+## Quarto
+
+```{r}
+#install.packages('tidyverse')
+#install.packages('nycflights13')
+
+```
+
+You can add options to executable code like this
+
+```{r}
+library(nycflights13)
+library(tidyverse)
+library(dplyr)
+```
+
+```{r}
+set.seed(10*101) 
+# zamiast ... wpisz sumaryczną liczbę liter z twojego imienia i nazwiska pomnżone przez 101
+produkty <- c("Produkt_A", "Produkt_B", "Produkt_C")
+kwartały <- c("Q1", "Q2", "Q3", "Q4")
+lata <- c("2020", "2021", "2022", "2023")
+```
+
+```{r}
+sales_data <- data.frame(
+  Produkt = rep(produkty, each = length(lata)),
+  Rok = rep(lata, times = length(produkty)),
+  Q1 = sample(100:500, length(lata) * length(produkty)),
+  Q2 = sample(100:500, length(lata) * length(produkty)),
+  Q3 = sample(100:500, length(lata) * length(produkty)),
+  Q4 = sample(100:500, length(lata) * length(produkty))
+)
+sales_data
+```
+
+```{r}
+set.seed(10*101) # zamiast ... wpisz sumaryczną liczbę liter z twojego imienia i nazwiska pomnżone przez 101
+produkty <- c("Produkt_A", "Produkt_B", "Produkt_C")
+sklepy <- c("Sklep_X", "Sklep_Y", "Sklep_Z")
+miesiace <- c("Styczeń", "Luty", "Marzec")
+```
+
+```{r}
+sales_data_advanced <- data.frame(
+  Produkt = rep(produkty, each = length(sklepy) * length(miesiace)),
+  Sklep = rep(sklepy, times = length(produkty) * length(miesiace)),
+  Miesiac = rep(miesiace, each = length(produkty) * length(sklepy)),
+  Sprzedaz = sample(100:500, 27),
+  Koszty = sample(30:200, 27),
+  Zysk = NA
+)
+sales_data_advanced$Zysk <- sales_data_advanced$Sprzedaz - sales_data_advanced$Koszty
+```
+
+```{r}
+### Analiza zbioru danych  `sales_data`. 
+#1. Użyj funkcji `pivot_longer()` do przekształcenia zbioru danych `sales_data` z formatu szerokiego na format długi. Wynikowy zbiór danych powinien mieć kolumny: `Produkt`, `Kwartał`, i `Sprzedaż`
+
+
+sales_data_long <- pivot_longer(
+  data = sales_data,
+  cols = starts_with("Q"),
+  names_to = "Kwartał",
+  values_to = "Sprzedaż"
+)
+sales_data_long
+```
+
+```{r}
+
+### Analiza zbioru danych  `sales_data`. 
+
+# 2. Stwórz tabelę podsumowującą, która pokaże całkowitą sprzedaż dla każdego produktu we wszystkich kwartałach. Możesz użyć funkcji `group_by()` i `summarize()` z pakietu `dplyr`.
+
+summary_table <- sales_data_long |> group_by(Produkt) |> summarize(Całkowita_Sprzedaż = sum(Sprzedaż))
+summary_table
+```
+
+```{r}
+
+### Analiza zbioru danych  `sales_data`. 
+#3. Teraz użyj funkcji `pivot_wider()` do przywrócenia danych w formacie szerokim.
+
+sales_data_wide <- pivot_wider(
+  data = sales_data_long,
+  names_from = Kwartał,
+  values_from = Sprzedaż
+)
+sales_data_wide
+```
+
+Analiza zbioru danych::: `sales_data_advanced`
+
+```{r}
+sales_data_advanced
+```
+
+```{r}
+#1. **Filtrowanie danych:** Wybierz tylko te rekordy, gdzie zysk jest dodatni.
+
+#2. **Sortowanie danych:** Posortuj dane według malejącego zysku, a następnie według nazw produktów rosnąco.
+
+profit <- sales_data_advanced |> filter(Zysk > 0) |> select(Produkt, Sklep, Miesiac,Zysk) 
+profit
+
+profit1 <- sales_data_advanced |> filter(Zysk > 0) |> select(Produkt, Sklep, Miesiac,Zysk) |> arrange(desc(Zysk)) 
+profit1
+
+profit2 <- sales_data_advanced |> filter(Zysk > 0) |> select(Produkt, Sklep, Miesiac,Zysk) |> arrange(Produkt)
+profit2
+```
+
+```{r}
+#3. **Tworzenie nowych kolumn:** Dodaj kolumnę `Marza_Procentowa`, która będzie zawierała procentową marżę zysku dla każdego rekordu.
+
+#(cena sprzedaży – koszt zakupu lub wytworzenia produktu) / cena sprzedaży x 100
+sales_data_advanced <- sales_data_advanced |> mutate(marz = (Sprzedaz- Koszty)/Sprzedaz*100)
+sales_data_advanced 
+
+```
+
+```{r}
+#4. **Agregacja danych:** Stwórz tabelę, która pokaże średnią sprzedaż, koszty i zysk dla każdego sklepu.
+aggregated_table <- sales_data_advanced  |> group_by(Sklep) |> summarize(
+    Średnia_Sprzedaż = mean(Sprzedaz),
+    Średnie_Koszty = mean(Koszty),
+    Średni_Zysk = mean(Zysk)
+  )
+aggregated_table
+
+
+```
+
+```{r}
+#POMIJAM BO PROFESOR BARANOWSKI MÓWIŁ ŻEBY POMINAĆ 
+#5. **Pivotowanie danych:** Przekształć dane w taki sposób, aby w jednym wierszu były informacje o sprzedaży, kosztach i zysku dla danego produktu w danym sklepie w danym miesiącu. 
+
+#POMIJAM BO TO DOTYCZY TEGO 
+#7. **Powrót do szerokiego formatu:** Przekształć dane tak, aby wrócić do pierwotnego formatu, gdzie każdy wiersz reprezentuje produkt w danym sklepie w danym miesiącu. 
+```
+
+```{r}
+#6. **Dodatkowe przekształcenie danych:** Dodaj nową kolumnę `Koszty_na_Sprzedaz` reprezentującą procentowy udział kosztów w sprzedaży. 
+
+sales_data_advanced <- sales_data_advanced |> mutate(Koszty_na_Sprzedaz = (Koszty / Sprzedaz)*100)
+sales_data_advanced
+
+```
+
+```{r}
+#8. **Zaawansowane wybieranie danych:** Wybierz rekordy z największymi kosztami na sprzedaż dla każdego produktu.
+
+biggest_cost <- sales_data_advanced |> arrange(desc(Koszty_na_Sprzedaz)) 
+biggest_cost
+```
+
+Analiza zbioru danych `flights`
+
+```{r}
+#1. Określ, który przewoźnik ma największe opóźnienia przylotu? 
+
+#obliczam łączną sume opoźnienia przylotów, nie wliczając tych poniżej zera no bo to nie jst wtedy spóźnienie 
+
+flights
+
+delay <- flights |>
+  filter(arr_delay > 0) |>
+  group_by(carrier) |>
+  summarize(
+    sum_delay = sum(arr_delay)) |>
+  arrange(desc(sum_delay)) 
+delay
+```
+
+```{r}
+#2. Znajdź loty, które są najbardziej opóźnione przy odlocie z każdego lotniska.
+
+most_delayed_flights <- flights |>
+  group_by(origin) |>
+  slice_max(order_by = arr_delay, n = 1)
+most_delayed_flights
+```
+
+Analiza zbioru danych z listy Billboardu.
+
+```{r}
+#1. Wczytaj zbiór danych za pomocą funkcji `read_csv()'
+#install.packages("readr")
+library(readr)
+# Wczytanie danych z pliku CSV
+
+read_csv("C:/Users/User/Documents/GitHub/lab-7-karoldulak0/billboard")
+
+
+```
+
+```{r}
+#2. Sporządź tabelę zawierającą wszystkie piosenki, które **spadły** z listy we wrześniu 2000. (Wskazówka: poszukaj w Google jak dodawać określony czas do daty w R. Jeżeli piszesz własną funkcję do użīcia w `mutate()` pamiętaj o wektoryzacji)
+
+```
+
+```{r}
+#3. Określ, która z piosenek danego gatunku była na liście najdłużej. 
+```
